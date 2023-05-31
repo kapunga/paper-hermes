@@ -1,0 +1,18 @@
+name: HermesPlugin
+version: 1.0.0
+main: org.kapunga.hermes.Hermes
+description: A Slack integration for PaperMC
+author: PaperMC
+website: https://papermc.io
+api-version: 1.19
+
+commands:
+  hermeslink:
+    description: Your description
+    usage: /<command> [accept|deny]
+    permission: hermes.link
+
+permissions:
+  hermes.link:
+    description: Allows foo command
+    default: true
