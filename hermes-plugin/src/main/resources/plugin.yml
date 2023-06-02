@@ -5,6 +5,7 @@ description: A Slack integration for PaperMC
 author: PaperMC
 website: https://papermc.io
 api-version: 1.19
+depend: [LuckPerms]
 
 commands:
   hermeslink:
