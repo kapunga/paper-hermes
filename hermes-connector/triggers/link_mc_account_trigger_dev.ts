@@ -5,7 +5,7 @@ const linkMcAccountsTrigger: Trigger<
   typeof LinkMcAccountsWorkflow.definition
 > = {
   type: "shortcut",
-  name: "Link Minecraft Account",
+  name: "Link Minecraft Account (Dev)",
   description: "Link Minecraft Account",
   workflow: "#/workflows/link_mc_accounts_workflow",
   inputs: {
