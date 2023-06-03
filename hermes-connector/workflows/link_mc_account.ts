@@ -7,18 +7,26 @@ export const LinkMcAccountsWorkflow = DefineWorkflow({
   description: "Link Minecraft Account",
   input_parameters: {
     properties: {
+      channel_id: {
+        type: Schema.slack.types.channel_id,
+      },
       user_id: {
         type: Schema.slack.types.user_id,
       },
       interactivity: {
         type: Schema.slack.types.interactivity,
       },
+      mc_hermes_host: {
+        type: Schema.types.string,
+      },
     },
-    required: ["user_id", "interactivity"],
+    required: ["channel_id", "user_id", "interactivity", "mc_hermes_host"],
   },
 });
 
 LinkMcAccountsWorkflow.addStep(LinkMcAccountFunction, {
+  channel_id: LinkMcAccountsWorkflow.inputs.channel_id,
   user_id: LinkMcAccountsWorkflow.inputs.user_id,
   interactivity: LinkMcAccountsWorkflow.inputs.interactivity,
+  mc_hermes_host: LinkMcAccountsWorkflow.inputs.mc_hermes_host,
 });

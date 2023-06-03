@@ -1,4 +1,4 @@
-import { MinecraftPlayer } from "../functions/link_mc_account_function.ts";
+import { MinecraftPlayer } from "../lib/mc_hermes_client.ts";
 
 export const renderSelectPlayerView = (
   players: MinecraftPlayer[],
@@ -68,6 +68,19 @@ export const renderSelectPlayerView = (
           "text": "Where do you know Thor from?",
           "emoji": true,
         },
+      },
+      {
+        "type": "divider",
+      },
+      {
+        "type": "context",
+        "elements": [
+          {
+            "type": "mrkdwn",
+            "text":
+              "Once you click 'Submit', a message will be sent to your logged in player. Please click the `[Accept]` in chat to confirm linking accounts.",
+          },
+        ],
       },
     ],
   };

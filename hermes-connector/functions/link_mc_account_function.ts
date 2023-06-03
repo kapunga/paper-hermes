@@ -6,11 +6,7 @@ import {
 } from "deno-slack-sdk/mod.ts";
 import { SlackAPIClient } from "deno-slack-sdk/types.ts";
 import { renderSelectPlayerView } from "../views/select_player_view.ts";
-
-export type MinecraftPlayer = {
-  name: string;
-  id: string;
-};
+import { McConnectResponse, McHermesClient } from "../lib/mc_hermes_client.ts";
 
 export const LinkMcAccountFunction = DefineFunction({
   callback_id: "link_mc_account_function",
@@ -18,14 +14,20 @@ export const LinkMcAccountFunction = DefineFunction({
   source_file: "functions/link_mc_account_function.ts",
   input_parameters: {
     properties: {
+      channel_id: {
+        type: Schema.slack.types.channel_id,
+      },
       user_id: {
         type: Schema.slack.types.user_id,
       },
       interactivity: {
         type: Schema.slack.types.interactivity,
       },
+      mc_hermes_host: {
+        type: Schema.types.string,
+      },
     },
-    required: ["user_id", "interactivity"],
+    required: ["channel_id", "user_id", "interactivity", "mc_hermes_host"],
   },
   output_parameters: {
     properties: {},
@@ -36,27 +38,24 @@ export const LinkMcAccountFunction = DefineFunction({
 export default SlackFunction(
   LinkMcAccountFunction,
   async ({ inputs, token }) => {
-    const client: SlackAPIClient = SlackAPI(token);
-    const playersResponse = await fetch("http://localhost:7070/players");
-    const groupsResponse = await fetch("http://localhost:7070/groups");
+    const mcHermesClient: McHermesClient = new McHermesClient(
+      inputs.mc_hermes_host,
+    );
+    const slackClient: SlackAPIClient = SlackAPI(token);
 
-    if (playersResponse.status !== 200) {
-      console.log("Non 2xx response for players: " + playersResponse.status);
-      return { outputs: {} };
-    } else if (groupsResponse.status !== 200) {
-      console.log("Non 2xx response for groups: " + groupsResponse.status);
+    const players = await mcHermesClient.listUnlinkedPlayers();
+    const groups = await mcHermesClient.listGroups();
+
+    if (players.length === 0) {
+      slackClient.chat.postEphemeral({
+        channel: inputs.channel_id,
+        user: inputs.user_id,
+        text:
+          "There are no unlinked players logged into the server. Please ensure you are logged in. If you are, it's possible you have already linked your accounts.",
+      });
       return { outputs: {} };
     } else {
-      const players: MinecraftPlayer[] = await playersResponse
-        .json() as MinecraftPlayer[];
-      const groups: string[] = await groupsResponse.json() as string[];
-
-      console.log(`Player response: ${JSON.stringify(players)}`);
-      console.log(`Groups response: ${JSON.stringify(groups)}`);
-
-      console.log(typeof groups);
-
-      const result = await client.views.open({
+      const result = await slackClient.views.open({
         trigger_id: inputs.interactivity.interactivity_pointer,
         view: renderSelectPlayerView(players, groups),
       });
@@ -69,41 +68,57 @@ export default SlackFunction(
 ).addViewSubmissionHandler(
   "select_player_view",
   async ({ inputs, body, view, token }) => {
-    const client: SlackAPIClient = SlackAPI(token);
+    const mcHermesClient: McHermesClient = new McHermesClient(
+      inputs.mc_hermes_host,
+    );
+    const slackClient: SlackAPIClient = SlackAPI(token);
 
     const player =
       view.state.values.player_block.select_player.selected_option.value;
     const group =
       view.state.values.context_block.select_context.selected_option.value;
 
-    console.log(`Player: ${player} Context: ${group}`);
-
-    const userResp = await client.users.info({ user: inputs.user_id });
-
+    const userResp = await slackClient.users.info({ user: inputs.user_id });
     const name = userResp.user.real_name;
 
-    const payload = {
+    const result = await mcHermesClient.sendLinkRequest({
       id: player,
       slack_name: name,
       slack_id: inputs.user_id,
       group: group,
-    };
-
-    const resp = await fetch("http://localhost:7070/link/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
     });
 
-    if (resp.status === 200) {
-      console.log("Success!");
-    } else {
-      console.log("Failure!");
+    let resultMsg;
+
+    switch (result) {
+      case McConnectResponse.Success:
+        resultMsg =
+          ":tada: Your Slack and Minecraft accounts have been successfully linked!";
+        break;
+      case McConnectResponse.ConnectDenied:
+        resultMsg =
+          ":no_entry: Minecraft player rejected link request, make sure you are linking to your own player.";
+        break;
+      case McConnectResponse.AlreadyLinked:
+        resultMsg =
+          ":warning: Your account is already linked. If you think this is a mistake, please contact an admin.";
+        break;
+      case McConnectResponse.Timeout:
+        resultMsg =
+          ":hourglass: Attempt to link your accounts timed out, please try again later.";
+        break;
+      case McConnectResponse.ServerError:
+        resultMsg = "Server error, please try again later.";
+        break;
     }
 
-    await client.functions.completeSuccess({
+    slackClient.chat.postEphemeral({
+      channel: inputs.channel_id,
+      user: inputs.user_id,
+      text: resultMsg,
+    });
+
+    await slackClient.functions.completeSuccess({
       function_execution_id: body.function_data.execution_id,
       outputs: {},
     });

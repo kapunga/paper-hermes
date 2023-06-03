@@ -69,7 +69,7 @@ public class PlayerLinkService {
 
         return Bukkit.getOnlinePlayers()
                 .stream()
-                .filter(p -> linkedPlayers.contains(p.getUniqueId()))
+                .filter(p -> !linkedPlayers.contains(p.getUniqueId()))
                 .map(PlayerStub::new)
                 .toList();
     }
@@ -79,11 +79,11 @@ public class PlayerLinkService {
         return groups;
     }
 
-    public CompletableFuture<PlayerLinkResult> requestLinkPlayer(PlayerLinkRequest req) {
+    public CompletableFuture<Void> requestLinkPlayer(PlayerLinkRequest req) {
         logger.info("Attempting to link " + req.id() + " to " +
                 req.slackId() + " with group " + req.group());
 
-        CompletableFuture<PlayerLinkResult> future = new CompletableFuture<>();
+        CompletableFuture<Void> future = new CompletableFuture<>();
 
         Player player = Bukkit.getPlayer(req.id());
 
@@ -118,7 +118,7 @@ public class PlayerLinkService {
             slackLinkConfig.setPlayerSlackUserId(player.getUniqueId(), pendingLinkRequest.req().slackId());
 
             logger.info("User's new group: " + user.getPrimaryGroup());
-            pendingLinkRequest.future().complete(PlayerLinkResult.SUCCEEDED);
+            pendingLinkRequest.future().complete(null);
             return true;
         } catch (IllegalStateException e) {
             pendingLinkRequest.future().completeExceptionally(new InternalError("Bad Permission State"));
@@ -133,10 +133,10 @@ public class PlayerLinkService {
     }
 
     public boolean denyLink(Player player) {
-        CompletableFuture<PlayerLinkResult> future = linkRequests.get(player.getUniqueId()).future();
+        PendingLinkRequest req = linkRequests.get(player.getUniqueId());
 
-        if (future != null) {
-            future.completeExceptionally(new ForbiddenResponse("Link denied by player."));
+        if (req != null) {
+            req.future().completeExceptionally(new ForbiddenResponse("Link denied by player."));
             return true;
         } else {
             return false;

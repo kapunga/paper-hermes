@@ -4,7 +4,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
-import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.util.Set;
@@ -14,9 +13,9 @@ import java.util.stream.Collectors;
 
 public class SlackLinkConfig {
     public static final String SLACK_ID_SECTION = "slack-user-ids";
-    private Logger logger = Bukkit.getLogger();
-    private File playerLinkFile;
-    private YamlConfiguration playerLinkConf;
+    private final Logger logger = Bukkit.getLogger();
+    private final File playerLinkFile;
+    private final YamlConfiguration playerLinkConf;
 
     public SlackLinkConfig(File pluginData) {
         if (!pluginData.exists()) {
@@ -34,18 +33,12 @@ public class SlackLinkConfig {
         return configSection().getString(playerId.toString()) != null;
     }
 
-    public @Nullable String getPlayerSlackUserId(UUID playerId) {
-        return configSection().getString(playerId.toString());
-    }
-
-    public boolean setPlayerSlackUserId(UUID playerId, String slackId) {
+    public void setPlayerSlackUserId(UUID playerId, String slackId) {
         configSection().set(playerId.toString(), slackId);
         try {
             playerLinkConf.save(playerLinkFile);
-            return true;
         } catch (IOException e) {
             logger.severe("Error saving player Slack link file.");
-            return false;
         }
     }
 

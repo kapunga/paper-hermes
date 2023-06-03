@@ -1,0 +1,6 @@
+server-port: 7070
+config-groups:
+  - Member
+#  - Friend
+#  - KAYAK
+#  - Slack

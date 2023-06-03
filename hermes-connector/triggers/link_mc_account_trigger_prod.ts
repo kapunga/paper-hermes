@@ -9,11 +9,17 @@ const linkMcAccountsTrigger: Trigger<
   description: "Link Minecraft Account",
   workflow: "#/workflows/link_mc_accounts_workflow",
   inputs: {
+    channel_id: {
+      value: "{{data.channel_id}}",
+    },
     user_id: {
       value: "{{data.user_id}}",
     },
     interactivity: {
       value: "{{data.interactivity}}",
+    },
+    mc_hermes_host: {
+      value: "https://mchermes.kapunga.org",
     },
   },
 };
