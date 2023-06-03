@@ -1,1 +1,11 @@
-{}
+{
+  "apps": {
+    "bilskirnir-thor": {
+      "name": "bilskirnir-thor",
+      "app_id": "A05AD9MAXK9",
+      "team_id": "T043T7BQ420",
+      "IsDev": false
+    }
+  },
+  "default": "bilskirnir-thor"
+}
