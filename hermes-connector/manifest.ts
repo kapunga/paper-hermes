@@ -13,6 +13,6 @@ export default Manifest({
   icon: "assets/default_new_app_icon.png",
   functions: [LinkMcAccountFunction],
   workflows: [LinkMcAccountsWorkflow],
-  outgoingDomains: ["mchermes.kapunga.org"],
+  outgoingDomains: ["mchermes.kapunga.org", "localhost"],
   botScopes: ["commands", "chat:write", "chat:write.public", "users:read"],
 });
